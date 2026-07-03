@@ -199,13 +199,15 @@ const DETAIL_TABS = [
 function UserDetail({ detail, isAdmin, busy, onStatus, onRole }) {
   // Hooks must run before the early return below.
   const [records, setRecords] = useState([]);
+  const [journal, setJournal] = useState([]);
   const [openRec, setOpenRec] = useState(null);
   const [tab, setTab] = useState("overview");
 
   useEffect(() => {
-    setRecords([]); setOpenRec(null); setTab("overview");
+    setRecords([]); setJournal([]); setOpenRec(null); setTab("overview");
     if (detail?.id) {
       api.userSoapRecords(detail.id).then((r) => setRecords(r.records || [])).catch(() => {});
+      api.userJournal(detail.id).then((r) => setJournal(r.entries || [])).catch(() => {});
     }
   }, [detail?.id]);
 
@@ -271,6 +273,32 @@ function UserDetail({ detail, isAdmin, busy, onStatus, onRole }) {
               <>
                 <div className="detail-section-title">AI memory gist</div>
                 <div className="timeline-text">{d.memory.summary}</div>
+              </>
+            )}
+            {(d.progress?.common_themes?.length ?? 0) > 0 && (
+              <>
+                <div className="detail-section-title">Common themes (chats)</div>
+                <div className="timeline-text">
+                  {d.progress.common_themes.map((t) => `${t.theme} ×${t.count}`).join(" · ")}
+                </div>
+              </>
+            )}
+            {d.progress?.stress_trend?.direction && (
+              <div className="detail-row"><span className="k">Stress trend</span>
+                <span className="v">
+                  {d.progress.stress_trend.direction === "improving" ? "▼ improving"
+                    : d.progress.stress_trend.direction === "worsening" ? "▲ worsening" : "− stable"}
+                </span></div>
+            )}
+            {(d.progress?.lessons_done?.length ?? 0) > 0 && (
+              <>
+                <div className="detail-section-title">CBT exercises completed</div>
+                {d.progress.lessons_done.slice(0, 6).map((l, i) => (
+                  <div className="detail-row" key={i}>
+                    <span className="k">{fmtDate(l.completed_at)}</span>
+                    <span className="v">{l.title}</span>
+                  </div>
+                ))}
               </>
             )}
           </>
@@ -340,6 +368,24 @@ function UserDetail({ detail, isAdmin, busy, onStatus, onRole }) {
                     </div>
                   </div>
                 )}
+              </div>
+            ))}
+
+            <div className="detail-section-title">
+              Journal (shared by user{journal.length ? ` · ${journal.length}` : ""})
+            </div>
+            {journal.length === 0 ? (
+              <div className="timeline-text">
+                No shared journal entries — the journal is private by default;
+                users choose per-entry whether to share.
+              </div>
+            ) : journal.map((j) => (
+              <div className="timeline-item" key={j.id}>
+                <div className="timeline-top">
+                  {j.mood != null && <span className="pill gray">mood {j.mood}/10</span>}
+                  <span className="timeline-date">{fmtDateTime(j.created_at)}</span>
+                </div>
+                <div className="timeline-text" style={{ whiteSpace: "pre-wrap" }}>{j.content}</div>
               </div>
             ))}
           </>
