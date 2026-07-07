@@ -152,38 +152,64 @@ function chartPoints(values, maximum) {
     `${32 + (index * 544) / denominator},${170 - (value / maximum) * 148}`).join(" ");
 }
 
+// A clean axis top + evenly-spaced integer ticks (no more "1 1 0 0" duplicates).
+function niceAxis(rawMax) {
+  const max = Math.max(1, Math.ceil(rawMax));
+  if (max <= 6) {                                  // small counts → integer ticks
+    const ticks = [];
+    for (let v = max; v >= 0; v--) ticks.push(v);
+    return { max, ticks };
+  }
+  const rough = max / 4;
+  const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+  const n = rough / pow;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * pow;
+  const top = Math.ceil(max / step) * step;
+  const ticks = [];
+  for (let v = top; v >= 0; v -= step) ticks.push(v);
+  return { max: top, ticks };
+}
+
 function LineChart({ rows }) {
   const screenings = rows.map((row) => row.screenings);
   const averages = rows.map((row) => row.seven_day_average);
-  const rawMaximum = Math.max(1, ...screenings, ...averages);
-  const maximum = rawMaximum > 100 ? Math.ceil(rawMaximum / 1000) * 1000 : Math.ceil(rawMaximum);
-  const yLabels = [maximum, maximum * 0.75, maximum * 0.5, maximum * 0.25, 0];
-  const peak = rows.reduce((best, row) => row.screenings > best.screenings ? row : best, rows[0] || { screenings: 0, seven_day_average: 0, date: "" });
+  const { max: maximum, ticks } = niceAxis(Math.max(1, ...screenings, ...averages));
   const labelStep = Math.max(1, Math.ceil(rows.length / 8));
+  const X0 = 32, X1 = 576, TOP = 22, BOT = 170, H = BOT - TOP;
+  const n = Math.max(rows.length, 1);
+  const slot = (X1 - X0) / n;
+  const barW = Math.min(30, slot * 0.6);
+  const cx = (i) => X0 + i * slot + slot / 2;
+  const yOf = (v) => BOT - (v / maximum) * H;
+  const avgPts = averages.map((v, i) => `${cx(i)},${yOf(v)}`).join(" ");
   return (
     <article className="rp-card rp-chart-card rp-reveal" style={{ "--i": 5 }}>
       <div className="rp-card-head">
         <CardTitle info>Daily Screenings</CardTitle>
-        <div className="rp-legend"><span><i className="indigo" />Screenings</span><span><i className="dash" />7-day Average</span></div>
+        <div className="rp-legend"><span><i className="bar" />Screenings</span><span><i className="dash" />7-day Average</span></div>
       </div>
       <div className="rp-line-layout">
-        <div className="rp-y-labels">{yLabels.map((value, index) => <span key={index}>{compactNumber(value)}</span>)}</div>
+        <div className="rp-y-labels">{ticks.map((value, index) => <span key={index}>{compactNumber(value)}</span>)}</div>
         <div className="rp-line-plot">
-          <svg viewBox="0 0 600 190" role="img" aria-label="Daily screenings line chart">
+          <svg viewBox="0 0 600 190" role="img" aria-label="Daily screenings bar chart">
             <defs>
-              <linearGradient id="rpAreaFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+              <linearGradient id="rpBarFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#5ec9af" />
+                <stop offset="100%" stopColor="#3FA98F" />
               </linearGradient>
             </defs>
-            {[20, 57, 94, 131, 168].map((y) => <line key={y} x1="32" y1={y} x2="576" y2={y} className="rp-gridline" />)}
-            <polygon points={`${chartPoints(screenings, maximum)} 576,170 32,170`} className="rp-area" fill="url(#rpAreaFill)" />
-            <polyline points={chartPoints(averages, maximum)} className="rp-average-line" pathLength="1" />
-            <polyline points={chartPoints(screenings, maximum)} className="rp-main-line" pathLength="1" />
-            {screenings.map((value, index) => (
-              <circle key={index} cx={32 + (index * 544) / Math.max(screenings.length - 1, 1)}
-                cy={170 - (value / maximum) * 148} r="4" className="rp-line-dot" />
-            ))}
+            {ticks.map((v, i) => <line key={i} x1={X0} y1={yOf(v)} x2={X1} y2={yOf(v)} className="rp-gridline" />)}
+            {screenings.map((value, index) => {
+              const bh = value > 0 ? Math.max((value / maximum) * H, 3) : 0;
+              return (
+                <rect key={index} x={cx(index) - barW / 2} y={BOT - bh} width={barW} height={bh}
+                  rx="5" className="rp-bar" fill="url(#rpBarFill)" style={{ "--i": index }}>
+                  <title>{`${rows[index]?.label || ""}: ${value}`}</title>
+                </rect>
+              );
+            })}
+            {averages.some((v) => v > 0) &&
+              <polyline points={avgPts} className="rp-average-line" pathLength="1" />}
           </svg>
           <div className="rp-x-labels">{rows.map((row, index) => <span key={row.date || index}>{index % labelStep === 0 || index === rows.length - 1 ? row.label : ""}</span>)}</div>
         </div>
