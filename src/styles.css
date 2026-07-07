@@ -38,6 +38,18 @@ body {
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
+/* Soft watercolor backdrop, matching the user app — a fixed layer pinned to the
+   bottom, behind all content. The shell/content areas are transparent so it
+   shows through; the white sidebar, topbar and cards float on top. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("/app-bg.png") no-repeat center bottom;
+  background-size: cover;
+  pointer-events: none;
+}
 button { font-family: inherit; cursor: pointer; }
 
 /* ============================================================
@@ -405,7 +417,7 @@ button { font-family: inherit; cursor: pointer; }
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--la-bg);
+  background: transparent;            /* let the watercolor backdrop show through */
   color: var(--la-ink);
   font-family: var(--font);
 }
@@ -414,8 +426,9 @@ button { font-family: inherit; cursor: pointer; }
 .la-sidebar {
   width: 248px;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #111c33 0%, var(--la-navy) 100%);
-  color: #cbd5e1;
+  background: var(--la-surface);
+  border-right: 1px solid var(--la-line);
+  color: var(--la-ink);
   display: flex;
   flex-direction: column;
   padding: 18px 14px;
@@ -424,33 +437,33 @@ button { font-family: inherit; cursor: pointer; }
 .la-brand { display: flex; align-items: center; gap: 11px; padding: 6px 8px 22px; }
 .la-brand-logo {
   width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0;
-  background: rgba(99,102,241,0.22);
+  background: rgba(86,194,168,0.16);
   display: flex; align-items: center; justify-content: center; font-size: 20px;
 }
-.la-brand-text { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.01em; line-height: 1.2; }
-.la-brand-text span { color: #56C2A8; }
+.la-brand-text { font-size: 16px; font-weight: 800; color: var(--la-ink); letter-spacing: -0.01em; line-height: 1.2; }
+.la-brand-text span { color: var(--la-indigo); }
 
 .la-nav { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .la-nav-item {
   display: flex; align-items: center; gap: 13px;
   padding: 11px 13px; border-radius: 10px;
-  border: none; background: none; color: #94a3b8;
+  border: none; background: none; color: var(--la-ink-soft);
   font-family: var(--font); font-size: 14px; font-weight: 500;
   text-align: left; width: 100%; cursor: pointer; transition: all 0.15s;
 }
-.la-nav-item:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+.la-nav-item:hover { background: rgba(86,194,168,0.10); color: var(--la-indigo-dark); }
 .la-nav-item.active {
   background: var(--la-indigo);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 6px 16px rgba(99,102,241,0.4);
+  box-shadow: 0 6px 16px rgba(86,194,168,0.35);
 }
 .la-nav-item svg { flex-shrink: 0; }
 
 .la-side-foot { margin-top: 14px; }
 .la-support-card {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--la-bg);
+  border: 1px solid var(--la-line);
   border-radius: 14px;
   padding: 14px;
   text-align: center;
@@ -460,17 +473,17 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 50%; background: rgba(16,185,129,0.18);
   display: flex; align-items: center; justify-content: center; font-size: 20px;
 }
-.la-support-text { font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px; }
+.la-support-text { font-size: 12px; color: var(--la-ink-soft); line-height: 1.5; margin-bottom: 12px; }
 .la-support-btn {
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font); font-size: 12.5px; font-weight: 600;
-  color: #fff; background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
+  color: var(--la-indigo-dark); background: var(--la-surface);
+  border: 1px solid var(--la-line); border-radius: 9px;
   padding: 8px 16px; cursor: pointer; transition: background 0.15s;
 }
-.la-support-btn:hover { background: rgba(255,255,255,0.14); }
+.la-support-btn:hover { background: rgba(86,194,168,0.10); }
 .la-dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; }
-.la-version { text-align: center; font-size: 11px; color: #475569; margin-top: 14px; }
+.la-version { text-align: center; font-size: 11px; color: var(--la-ink-soft); margin-top: 14px; }
 
 /* ── Main ── */
 .la-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -1381,7 +1394,7 @@ button { font-family: inherit; cursor: pointer; }
   .rp-loading-stats { grid-template-columns: repeat(2,1fr); }.rp-loading-stats .rp-skeleton:last-child { grid-column: auto; grid-row: auto; height: 122px; }
 }
 @media (max-width: 900px) {
-  .rp-shell .la-sidebar { display: flex; position: fixed; z-index: 101; inset: 0 auto 0 0; width: 260px; transform: translateX(-105%); animation: none; transition: transform .25s ease-out; }.rp-shell .la-sidebar.mobile-open { transform: translateX(0); box-shadow: 20px 0 50px rgba(15,23,42,.3); }.la-sidebar-close { display: grid; place-items: center; position: absolute; top: 13px; right: 11px; width: 34px; height: 34px; border: 0; border-radius: 9px; color: #cbd5e1; background: rgba(255,255,255,.07); cursor: pointer; }.rp-nav-scrim { display: block; position: fixed; z-index: 100; inset: 0; border: 0; background: rgba(15,23,42,.5); }
+  .rp-shell .la-sidebar { display: flex; position: fixed; z-index: 101; inset: 0 auto 0 0; width: 260px; transform: translateX(-105%); animation: none; transition: transform .25s ease-out; }.rp-shell .la-sidebar.mobile-open { transform: translateX(0); box-shadow: 20px 0 50px rgba(15,23,42,.3); }.la-sidebar-close { display: grid; place-items: center; position: absolute; top: 13px; right: 11px; width: 34px; height: 34px; border: 0; border-radius: 9px; color: var(--la-ink-soft); background: var(--la-bg); cursor: pointer; }.rp-nav-scrim { display: block; position: fixed; z-index: 100; inset: 0; border: 0; background: rgba(15,23,42,.5); }
   .rp-shell .la-mobile-menu { display: flex; }.rp-shell .la-topbar-title { flex-direction: column; gap: 0; }.rp-shell .la-topbar-title h1 { font-size: 21px; }.rp-shell .la-topbar-sub { font-size: 10px; }.rp-shell .la-search-wrap { order: 5; flex: 1 0 100%; margin-left: 0; }
   .rp-kpi-grid { grid-template-columns: repeat(2,1fr); }.rp-report-actions { grid-column: auto; grid-row: auto; }.rp-chart-grid, .rp-bottom-grid { grid-template-columns: 1fr; }.rp-topic-card, .rp-insights { grid-column: auto; }.rp-insight-list { grid-template-columns: repeat(2,1fr); }
   .rp-loading-grid { grid-template-columns: repeat(2,1fr); }.rp-loading-grid .rp-skeleton:last-child { grid-column: 1 / -1; }
@@ -1577,7 +1590,7 @@ button { font-family: inherit; cursor: pointer; }
    exact la-* tokens (radius 16, padding 18, icon 46, content 24/26)
    so all admin pages share one consistent form.
 ═══════════════════════════════════════════════════════════════ */
-.rp-content, .lg-content, .st-content { padding: 24px 26px; gap: 22px; background: var(--la-bg); }
+.rp-content, .lg-content, .st-content { padding: 24px 26px; gap: 22px; background: transparent; }
 
 /* Cards + stat cards → identical box to .la-card / .la-stat */
 .rp-card, .rp-stat, .rp-report-actions, .rp-insights,
