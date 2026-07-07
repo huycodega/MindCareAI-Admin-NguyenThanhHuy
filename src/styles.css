@@ -346,7 +346,7 @@ button { font-family: inherit; cursor: pointer; }
    Login
    ============================================================ */
 .login-wrap { display: grid; place-items: center; height: 100vh;
-  background: linear-gradient(135deg, var(--sidebar-1), var(--sidebar-2)); }
+  background: transparent; }   /* reveal the watercolor backdrop; the card stays white */
 .login-card {
   background: #fff; border-radius: 20px; padding: 34px; width: 380px;
   box-shadow: var(--shadow-lg);
